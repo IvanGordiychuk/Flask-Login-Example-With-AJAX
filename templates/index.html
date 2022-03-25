@@ -1,16 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
 {% if session['logged_in'] %}
-   
+<form action="/logout">
+    <input type="submit" value="Logout" />
+</form>
+
+</form>
 	{% if data %}
-	<h3>{{data}}</h3>
+	<form method="POST" action="/">
+	{% for item in data %}
+
+		<h2>id: {{item.id}}</h2>
+
+			<h3>admin Rights: {{item.admin}}
+				<input type="checkbox" value={{item.id}} name="mycheckbox" ></h3>
+
+
+
+	{% endfor %}
+	<input type="submit" name="form1">
+	</form>
+
 	{% else %}
 
 	<a href="/logout">Logout</a> <br> <br>
-	<form action="" method="POST">
-	  <input type="username" name="username" placeholder="Instagram Username">
-	  <input type="submit" value="Finds">
-	</form>
 	{% endif %}
 
 {% else %}

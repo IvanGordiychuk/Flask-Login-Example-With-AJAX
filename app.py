@@ -1,8 +1,8 @@
 """Flask Login Example and instagram fallowing find"""
 
-from flask import Flask, url_for, render_template, request, redirect, session
+from flask import Flask, url_for, render_template, request, redirect, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from instagram import getfollowedby, getname
+import sqlalchemy_utils
 
 
 app = Flask(__name__)
@@ -15,10 +15,12 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True)
     password = db.Column(db.String(80))
+    admin = db.Column(db.Boolean)
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, admin):
         self.username = username
         self.password = password
+        self.admin = admin
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -27,10 +29,45 @@ def home():
     if not session.get('logged_in'):
         return render_template('index.html')
     else:
-        if request.method == 'POST':
-            username = getname(request.form['username'])
-            return render_template('index.html', data=getfollowedby(username))
-        return render_template('index.html')
+        user_data=User.query.all()
+        if (request.method == "POST") and ('form1' in request.form):
+            for user in User.query.all():
+                user.admin=False
+                db.session.commit()
+            for idAdmin in request.form.getlist('mycheckbox'):
+            #    print(idAdmin)
+                User.query.filter_by(id=idAdmin).first().admin=True
+                db.session.commit()
+                #print(User.query.filter_by(id=idAdmin).first().admin)
+            return "Done"
+        return render_template('index.html',data=user_data)
+
+
+@app.route('/get-json1')
+def get_json1():
+    try:
+        return render_template('json_files/frst_1')
+
+    except Exception as e:
+        return str(e)
+
+
+@app.route('/get-json2')
+def get_json2():
+    try:
+        return render_template('json_files/second_1')
+
+    except Exception as e:
+        return str(e)
+
+
+@app.route('/get-json3')
+def get_json3():
+    try:
+        return render_template('json_files/trd_1')
+
+    except Exception as e:
+        return str(e)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -40,9 +77,9 @@ def login():
         return render_template('login.html')
     else:
         name = request.form['username']
-        passw = request.form['password']
+        password = request.form['password']
         try:
-            data = User.query.filter_by(username=name, password=passw).first()
+            data = User.query.filter_by(username=name, password=password).first()
             if data is not None:
                 session['logged_in'] = True
                 return redirect(url_for('home'))
@@ -56,11 +93,20 @@ def login():
 def register():
     """Register Form"""
     if request.method == 'POST':
-        new_user = User(
-            username=request.form['username'],
-            password=request.form['password'])
-        db.session.add(new_user)
-        db.session.commit()
+        if sqlalchemy_utils.database_exists('sqlite:///test.db'):
+            new_user = User(
+                admin=False,
+                username=request.form['username'],
+                password=request.form['password'])
+            db.session.add(new_user)
+            db.session.commit()
+        else:
+            new_user = User(
+                admin=True,
+                username=request.form['username'],
+                password=request.form['password'])
+            db.session.add(new_user)
+            db.session.commit()
         return render_template('login.html')
     return render_template('register.html')
 
